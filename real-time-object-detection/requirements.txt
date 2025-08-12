@@ -1,0 +1,11 @@
+streamlit>=1.20.0
+ultralytics>=8.0.171
+opencv-python>=4.7.0
+pandas>=1.5.0
+numpy>=1.23.0
+plotly>=5.10.0
+python-multipart>=0.0.5
+# optional for playing sounds locally:
+simpleaudio>=1.0.4
+streamlit-drawable-canvas>=0.9.3
+plotly>=5.10.0
