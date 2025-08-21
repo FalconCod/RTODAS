@@ -9,6 +9,10 @@ from utils import draw_boxes, save_log_row, ensure_dir
 import plotly.express as px
 from datetime import datetime
 
+# ------------------- CLEAR CACHE ON RESTART -------------------
+st.cache_data.clear()
+st.cache_resource.clear()
+
 st.set_page_config(page_title="AI Surveillance Pro", layout="wide")
 
 # ------------------- HEADER -------------------
@@ -31,7 +35,7 @@ ensure_dir(snapshots_dir)
 with st.sidebar:
     st.title("Controls & Settings")
 
-    with st.expander("📷 Webcam Control", expanded=True):
+    with st.expander("Webcam Control", expanded=True):
         if st.button("Start Webcam"):
             st.session_state.started = True
             st.session_state.stop = False
@@ -41,7 +45,7 @@ with st.sidebar:
         if st.button("Stop Webcam"):
             st.session_state.stop = True
 
-    with st.expander("⚙️ Detection Settings", expanded=True):
+    with st.expander("Detection Settings", expanded=True):
         model_option = st.selectbox("YOLO model", ["yolov8n.pt", "yolov8s.pt"])
         confidence = st.slider("Confidence threshold", 0.1, 0.9, 0.35, 0.05)
         frame_skip = st.slider("Process every Nth frame", 1, 20, 2)
@@ -49,7 +53,7 @@ with st.sidebar:
         save_snapshots = st.checkbox("Save snapshots on alert", value=True)
         alert_hold_time = st.slider("Min seconds before alert", 1, 5, 2)
 
-    with st.expander("📜 Session History", expanded=False):
+    with st.expander("Session History", expanded=False):
         session_files = sorted(
             [f for f in os.listdir(log_dir) if f.startswith("session_") and f.endswith(".csv")],
             reverse=True
@@ -118,6 +122,10 @@ if st.session_state.started:
 
     while True:
         if st.session_state.stop:
+            # Gracefully clear UI when stopping
+            video_placeholder.empty()
+            stats_placeholder.empty()
+            log_placeholder.empty()
             break
 
         ret, frame = cap.read()
@@ -129,7 +137,13 @@ if st.session_state.started:
 
         frame_proc, alert, labels, detections = process_frame(frame.copy())
         rgb = cv2.cvtColor(frame_proc, cv2.COLOR_BGR2RGB)
-        video_placeholder.image(rgb, channels="RGB", use_column_width=True)
+        video_placeholder.image(
+            rgb,
+            channels="RGB",
+            use_container_width=True,
+            clamp=True,
+            output_format="JPEG"
+        )
 
         counts = {}
         for d in detections:
@@ -155,5 +169,5 @@ if st.session_state.started:
 
 # ------------------- LOAD PREVIOUS SESSION LOGS -------------------
 if st.session_state.history_df is not None:
-    st.subheader("📜 Loaded Session Log")
+    st.subheader("Loaded Session Log")
     st.dataframe(st.session_state.history_df, use_container_width=True)
