@@ -9,39 +9,25 @@ from utils import draw_boxes, save_log_row, ensure_dir
 import plotly.express as px
 from datetime import datetime
 
-# ------------------- CLEAR CACHE ON RESTART -------------------
 st.cache_data.clear()
 st.cache_resource.clear()
-
 st.set_page_config(page_title="AI Surveillance Pro", layout="wide")
 
-# ------------------- HEADER -------------------
-st.markdown(
-    "<h1 style='text-align: center;'>AI Surveillance Pro</h1>",
-    unsafe_allow_html=True
-)
-st.markdown(
-    "<p style='text-align: center; color: gray;'>Real-time object detection with analytics & alert logging</p>",
-    unsafe_allow_html=True
-)
+st.markdown("<h1 style='text-align: center;'>AI Surveillance Pro</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: gray;'>Real-time object detection with analytics & alert logging</p>", unsafe_allow_html=True)
 
-# ------------------- PATH SETUP -------------------
 log_dir = "logs"
 ensure_dir(log_dir)
 snapshots_dir = os.path.join(log_dir, "snapshots")
 ensure_dir(snapshots_dir)
 
-# ------------------- SIDEBAR -------------------
 with st.sidebar:
     st.title("Controls & Settings")
-
     with st.expander("Webcam Control", expanded=True):
         if st.button("Start Webcam"):
             st.session_state.started = True
             st.session_state.stop = False
-            st.session_state.current_session_log = os.path.join(
-                log_dir, f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-            )
+            st.session_state.current_session_log = os.path.join(log_dir, f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
         if st.button("Stop Webcam"):
             st.session_state.stop = True
 
@@ -54,10 +40,7 @@ with st.sidebar:
         alert_hold_time = st.slider("Min seconds before alert", 1, 5, 2)
 
     with st.expander("Session History", expanded=False):
-        session_files = sorted(
-            [f for f in os.listdir(log_dir) if f.startswith("session_") and f.endswith(".csv")],
-            reverse=True
-        )
+        session_files = sorted([f for f in os.listdir(log_dir) if f.startswith("session_") and f.endswith(".csv")], reverse=True)
         if session_files:
             selected_session = st.selectbox("Select a session log", session_files)
             if st.button("Load Session Log"):
@@ -66,7 +49,6 @@ with st.sidebar:
         else:
             st.info("No session logs available yet.")
 
-# ------------------- DETECTOR INIT -------------------
 if "detector" not in st.session_state:
     st.session_state.detector = YoloDetector(model_name=model_option, conf=confidence)
     st.session_state.started = False
@@ -75,7 +57,6 @@ if "detector" not in st.session_state:
     st.session_state.current_session_log = None
     st.session_state.history_df = None
 
-# ------------------- PROCESSING -------------------
 def process_frame(frame):
     detections = st.session_state.detector.detect(frame)
     alert_triggered = False
@@ -110,7 +91,6 @@ def process_frame(frame):
     draw_boxes(frame, detections)
     return frame, alert_triggered, triggered_labels, detections
 
-# ------------------- MAIN CONTENT -------------------
 video_placeholder = st.empty()
 stats_placeholder = st.empty()
 log_placeholder = st.empty()
@@ -122,7 +102,6 @@ if st.session_state.started:
 
     while True:
         if st.session_state.stop:
-            # Gracefully clear UI when stopping
             video_placeholder.empty()
             stats_placeholder.empty()
             log_placeholder.empty()
@@ -137,13 +116,7 @@ if st.session_state.started:
 
         frame_proc, alert, labels, detections = process_frame(frame.copy())
         rgb = cv2.cvtColor(frame_proc, cv2.COLOR_BGR2RGB)
-        video_placeholder.image(
-            rgb,
-            channels="RGB",
-            use_container_width=True,
-            clamp=True,
-            output_format="JPEG"
-        )
+        video_placeholder.image(rgb, channels="RGB", use_container_width=True, clamp=True, output_format="JPEG")
 
         counts = {}
         for d in detections:
@@ -167,7 +140,6 @@ if st.session_state.started:
 
     cap.release()
 
-# ------------------- LOAD PREVIOUS SESSION LOGS -------------------
 if st.session_state.history_df is not None:
     st.subheader("Loaded Session Log")
     st.dataframe(st.session_state.history_df, use_container_width=True)
